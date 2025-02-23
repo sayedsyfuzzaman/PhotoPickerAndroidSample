@@ -4,16 +4,15 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
-import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.Surface
@@ -21,6 +20,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
@@ -33,25 +34,20 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.concurrent.futures.await
 import androidx.core.content.res.ResourcesCompat
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import com.example.photopickerandroidsample.R
 import com.example.photopickerandroidsample.databinding.FragmentCameraBinding
+import com.example.photopickerandroidsample.methodselection.MethodSelectionDialogFragment.Companion.CAPTURED_IMAGE
 import com.example.photopickerandroidsample.utils.extensions.safeClick
 import kotlinx.coroutines.launch
-import java.io.File
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import com.example.photopickerandroidsample.utils.createImageFile
 
-class CameraFragment : Fragment() {
-    private var _binding: FragmentCameraBinding? = null
-    private val binding get() = _binding!!
+class CameraFragment : AppCompatActivity() {
+    private lateinit var binding: FragmentCameraBinding
 
     private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
     private lateinit var preview: Preview
@@ -64,17 +60,13 @@ class CameraFragment : Fragment() {
     private lateinit var cameraExecutor: ExecutorService
     private var openFrontCamArgs: Boolean? = null
 
-    @SuppressLint("SourceLockedOrientationActivity")
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        _binding = FragmentCameraBinding.inflate(layoutInflater)
-        return binding.root
-    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        binding = FragmentCameraBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        openFrontCamArgs = arguments?.getBoolean(OPEN_FRONT_CAMERA)
+        openFrontCamArgs = intent.extras?.getBoolean(OPEN_FRONT_CAMERA)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -105,10 +97,10 @@ class CameraFragment : Fragment() {
             captureAndSavePhoto()
         })
 
-        binding.viewFinder.setOnTouchListener { _, event ->
+        binding.viewFinder.setOnTouchListener { view, event ->
             view?.let {
                 if (event.action == MotionEvent.ACTION_UP) {
-                    it.performClick()
+                    view.performClick()
                     val factory = binding.viewFinder.meteringPointFactory
                     val point = factory.createPoint(event.x, event.y)
 
@@ -125,9 +117,9 @@ class CameraFragment : Fragment() {
         }
 
         binding.cameraCloseButton.safeClick( {
-            findNavController().popBackStack()
+            this.finish()
         })
-        orientationEventListener = object : OrientationEventListener(requireContext()) {
+        orientationEventListener = object : OrientationEventListener(this) {
             override fun onOrientationChanged(orientation: Int) {
                 val newRotation = when (orientation) {
                     in 45..134 -> Surface.ROTATION_270 // Left landscape
@@ -150,7 +142,7 @@ class CameraFragment : Fragment() {
 
     /** Initialize CameraX, and prepare to bind the camera use cases  */
     private suspend fun setUpCamera() {
-        cameraProvider = ProcessCameraProvider.getInstance(requireContext()).await()
+        cameraProvider = ProcessCameraProvider.getInstance(this).await()
 
         // Select lensFacing depending on the available cameras
         lensFacing = when {
@@ -208,7 +200,7 @@ class CameraFragment : Fragment() {
     private fun captureAndSavePhoto() {
         imageCapture?.let { imageCapture ->
             try {
-                val photoFile = createImageFile()
+                val photoFile = this.createImageFile()
                 val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
                 imageCapture.takePicture(
@@ -221,11 +213,12 @@ class CameraFragment : Fragment() {
                         override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                             Log.d(TAG, "Photo capture succeeded: ${output.savedUri}")
 
-                            Handler(Looper.getMainLooper()).post {
-                                findNavController().previousBackStackEntry?.savedStateHandle?.set(
-                                    CAPTURED_IMAGE_URI, output.savedUri)
-                                findNavController().popBackStack()
+                            // Send the result back
+                            val resultIntent = Intent().apply {
+                                putExtra(CAPTURED_IMAGE, output.savedUri.toString())
                             }
+                            setResult(Activity.RESULT_OK, resultIntent)
+                            finish() // Close the camera activity
                         }
                     })
             } catch (e: IOException) {
@@ -244,27 +237,10 @@ class CameraFragment : Fragment() {
     }
 
     /**
-     * Creates an image file in temporary storage that is not accessible from the gallery.
-     *
-     * @return A temporary image file.
-     * @throws IOException If an error occurs while creating the file.
-     */
-    @Throws(IOException::class)
-    private fun createImageFile(): File {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
-        val imageFileName = "IMAGE_" + timeStamp + "_"
-        val storageDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        if (storageDir?.exists() == false) {
-            storageDir.mkdirs()
-        }
-        return File.createTempFile(imageFileName, ".jpg", storageDir)
-    }
-
-    /**
      * Observes and handles camera state changes.
      */
     private fun observeCameraState(cameraInfo: CameraInfo) {
-        cameraInfo.cameraState.observe(viewLifecycleOwner) { cameraState ->
+        cameraInfo.cameraState.observe(this) { cameraState ->
             run {
                 when (cameraState.type) {
                     CameraState.Type.PENDING_OPEN -> {
@@ -373,9 +349,9 @@ class CameraFragment : Fragment() {
             binding.viewFinder.removeView(it)
         }
 
-        val focusCircle = View(requireContext()).apply {
+        val focusCircle = View(this).apply {
             layoutParams = ViewGroup.LayoutParams(100, 100)
-            background = ResourcesCompat.getDrawable(resources, R.drawable.focus_circle, requireContext().theme)
+            background = ResourcesCompat.getDrawable(resources, R.drawable.focus_circle, theme)
             alpha = 0f // Start invisible to prevent (0,0) flickering issue
         }
 
@@ -399,11 +375,9 @@ class CameraFragment : Fragment() {
                 duration = 500
                 addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator) {
-                        if (_binding != null){
-                            binding.viewFinder.removeView(focusCircle) // Remove after animation
-                            if (activeFocusCircle == focusCircle) {
-                                activeFocusCircle = null // Clear reference after removal
-                            }
+                        binding.viewFinder.removeView(focusCircle) // Remove after animation
+                        if (activeFocusCircle == focusCircle) {
+                            activeFocusCircle = null // Clear reference after removal
                         }
                     }
                 })
@@ -443,7 +417,7 @@ class CameraFragment : Fragment() {
      * @param cameraInfo The CameraInfo object whose observers should be removed.
      */
     private fun removeCameraStateObservers(cameraInfo: CameraInfo) {
-        cameraInfo.cameraState.removeObservers(viewLifecycleOwner)
+        cameraInfo.cameraState.removeObservers(this)
     }
 
     /**
@@ -454,24 +428,22 @@ class CameraFragment : Fragment() {
      */
     private fun handleCriticalError(errorMsg: String?= null) {
         Handler(Looper.getMainLooper()).post {
-            Toast.makeText(requireContext(), errorMsg ?: "Something went wrong!", Toast.LENGTH_SHORT).show()
-            findNavController().popBackStack()
+            Toast.makeText(this, errorMsg ?: "Something went wrong!", Toast.LENGTH_SHORT).show()
+            this.finish()
         }
     }
 
     /**
      * Cleans up resources when fragment is destroyed.
      */
-    override fun onDestroyView() {
+    override fun onDestroy() {
+        super.onDestroy()
         orientationEventListener.disable()
-        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        _binding = null
-        super.onDestroyView()
+        this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
     companion object{
         private const val TAG = "CameraFragment"
-        const val CAPTURED_IMAGE_URI = "captured_image_uri"
 
         /** Milliseconds used for UI animations */
         private const val ANIMATION_FAST_MILLIS = 50L

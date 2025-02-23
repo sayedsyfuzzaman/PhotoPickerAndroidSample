@@ -10,9 +10,10 @@
         android:name="com.example.photopickerandroidsample.HomeFragment"
         android:label="fragment_home"
         tools:layout="@layout/fragment_home" />
-    <fragment
-        android:id="@+id/cameraFragment"
-        android:name="com.example.photopickerandroidsample.camera.CameraFragment"
-        android:label="fragment_camera"
-        tools:layout="@layout/fragment_camera" />
+
+    <dialog
+        android:id="@+id/methodSelectionDialogFragment"
+        android:name="com.example.photopickerandroidsample.methodselection.MethodSelectionDialogFragment"
+        android:label="MethodSelectionDialogFragment" >
+    </dialog>
 </navigation>

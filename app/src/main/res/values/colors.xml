@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="onSurface">#FF000000</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="icActive">#FFFFFFFF</color>
@@ -9,4 +10,5 @@
     <color name="bgActive">#33FFFFFF</color>
     <color name="bgFocused">#66FFFFFF</color>
     <color name="bgPressed">#66FFFFFF</color>
+    <color name="rippleColor">#1A000000</color>
 </resources>

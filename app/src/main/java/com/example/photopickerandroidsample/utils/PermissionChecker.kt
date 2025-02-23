@@ -1,6 +1,8 @@
 package com.example.photopickerandroidsample.utils
 
 import android.Manifest
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
+import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -17,9 +19,31 @@ import com.permissionx.guolindev.PermissionX
 private const val SNACKBAR_ELEVATION_IN_DP = 20
 
 public class PermissionChecker {
+    /**
+     * Builds an [Array] of the required permissions for accessing visual media, based on the Android version.
+     */
+    private fun mediaPermission(): String=
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13
+            READ_MEDIA_IMAGES
+        } else {
+            // Android 12 and below
+            READ_EXTERNAL_STORAGE
+        }
+
     public fun isGrantedCameraPermissions(context: Context): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.CAMERA
+                ) == PackageManager.PERMISSION_GRANTED
+
+    public fun isGrantedMediaPermissions(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                ContextCompat.checkSelfPermission(
+                    context, mediaPermission()
+                ) == PackageManager.PERMISSION_GRANTED
+
 
     /**
      * Check if Camera Permission needs to be requested to the user
@@ -30,7 +54,15 @@ public class PermissionChecker {
      * False in another case
      */
     public fun isNeededToRequestForCameraPermissions(context: Context): Boolean =
-        context.isPermissionDeclared(Manifest.permission.CAMERA) && !isGrantedCameraPermissions(context)
+        context.isPermissionDeclared(Manifest.permission.CAMERA) && !isGrantedCameraPermissions(
+            context
+        )
+
+    public fun isNeededToRequestForMediaPermissions(context: Context): Boolean =
+        context.isPermissionDeclared(
+            mediaPermission()
+        ) && !isGrantedMediaPermissions(context)
+
 
     public fun checkCameraPermissions(
         view: View,
@@ -43,6 +75,22 @@ public class PermissionChecker {
             view.context.getString(R.string.permission_camera_message),
             view.context.getString(R.string.permission_camera_message),
             listOf(Manifest.permission.CAMERA),
+            onPermissionDenied,
+            onPermissionGranted,
+        )
+    }
+
+    public fun checkMediaPermissions(
+        view: View,
+        onPermissionDenied: () -> Unit = {},
+        onPermissionGranted: () -> Unit = {},
+    ) {
+        checkPermissions(
+            view,
+            view.context.getString(R.string.permission_storage_title),
+            view.context.getString(R.string.permission_storage_message),
+            view.context.getString(R.string.permission_storage_message),
+            listOf(mediaPermission()),
             onPermissionDenied,
             onPermissionGranted,
         )

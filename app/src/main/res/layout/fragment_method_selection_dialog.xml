@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/views"
+    android:background="@drawable/bottom_round_bg"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<ImageView
+    android:id="@+id/bottom_sheet_top_image"
+    android:layout_width="60dp"
+    android:layout_height="4dp"
+    android:layout_marginTop="8dp"
+    android:scaleType="fitXY"
+    app:srcCompat="@drawable/bottom_sheet_top_icon"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent"
+    android:contentDescription="@string/icon" />
+
+<TextView
+    android:id="@+id/pack_title"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="24dp"
+    android:background="?attr/selectableItemBackgroundBorderless"
+    android:text="@string/add_photo"
+    android:layout_marginHorizontal="24dp"
+    android:layout_marginBottom="16dp"
+    android:textColor="@color/onSurface"
+    android:textSize="20sp"
+    android:textStyle="bold"
+    app:layout_constraintTop_toBottomOf="@id/bottom_sheet_top_image"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintBottom_toTopOf="@id/photoButton"
+    app:layout_constraintVertical_chainStyle="packed" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/photoButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:drawableStart="@drawable/ic_camera"
+        android:drawablePadding="16dp"
+        android:text="@string/take_a_photo"
+        android:textAllCaps="false"
+        android:gravity="start|center"
+        android:paddingHorizontal="24dp"
+        android:background="@drawable/ripple_rectangle_shape"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/galleryButton"
+        app:layout_constraintTop_toBottomOf="@+id/pack_title" />
+
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/galleryButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="24dp"
+        android:drawableStart="@drawable/ic_gallery"
+        android:drawablePadding="16dp"
+        android:gravity="start|center"
+        android:text="@string/open_from_gallery"
+        android:background="@drawable/ripple_rectangle_shape"
+        android:textAllCaps="false"
+        android:layout_marginBottom="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/photoButton"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+

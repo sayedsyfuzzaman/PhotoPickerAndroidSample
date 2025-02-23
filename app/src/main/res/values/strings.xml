@@ -1,14 +1,18 @@
 <resources>
     <string name="app_name">PhotoPickerAndroidSample</string>
     <string name="permission_camera_title">Camera and Storage Access Permission</string>
-    <string name="permission_camera_message">Camera and storage access permissions are needed in order to be able to take photos and videos</string>
+    <string name="permission_camera_message">Camera and storage access permissions are needed to take photo</string>
     <string name="permission_setting_message">Enable permissions on App Settings</string>
     <string name="permissions_setting_button">Settings</string>
-
+    <string name="permission_storage_title">Storage Access Permissions</string>
+    <string name="permission_storage_message">Full Storage access permissions is needed for this feature</string>
 
     <string name="capture_button_alt">Capture</string>
     <string name="switch_camera_button_alt">Switch camera</string>
     <string name="flash_mode_button_alt">Turn on/off flash</string>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="open_from_gallery">Open from gallery</string>
+    <string name="take_a_photo">Take a photo</string>
+    <string name="add_photo">Add photo</string>
+    <string name="icon">icon</string>
 </resources>
