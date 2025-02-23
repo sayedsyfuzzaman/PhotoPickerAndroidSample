@@ -97,19 +97,10 @@ class MethodSelectionDialogFragment : BottomSheetDialogFragment() {
     }
 
     private fun checkMediaPermission() {
-        when {
-            PickVisualMedia.isPhotoPickerAvailable(requireContext()) -> {
-                openVisualMediaLauncher()
-            }
-            permissionChecker.isNeededToRequestForMediaPermissions(requireContext()) -> {
-                permissionChecker.checkMediaPermissions(
-                    view = binding.root,
-                    onPermissionGranted = ::openGalleryIntent
-                )
-            }
-            else -> {
-                openGalleryIntent()
-            }
+        if (PickVisualMedia.isPhotoPickerAvailable(requireContext())) {
+            openVisualMediaLauncher()
+        } else {
+            openGalleryIntent()
         }
     }
 
