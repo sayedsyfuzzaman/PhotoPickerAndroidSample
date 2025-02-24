@@ -7,11 +7,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.net.toUri
-import androidx.core.os.bundleOf
-import androidx.navigation.fragment.findNavController
 import coil.load
 import com.example.photopickerandroidsample.databinding.FragmentHomeBinding
-import com.example.photopickerandroidsample.methodselection.MethodSelectionDialogFragment.Companion.SINGLE_IMAGE_URI
+import com.example.photopickerandroidsample.methodselection.MethodSelectionDialogFragment
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -57,32 +55,35 @@ class HomeFragment : Fragment() {
     }
 
     private fun openMediaPicker() {
-        findNavController().navigate(
-            R.id.methodSelectionDialogFragment, bundleOf(
-                "isProfileImage" to isProfileImage,
-                "isPassportImage" to isPassportImage
-            )
-        )
+        val dialog = MethodSelectionDialogFragment().apply {
+            arguments = Bundle().apply {
+                putBoolean(MethodSelectionDialogFragment.ARG_IS_PROFILE_IMAGE, isProfileImage)
+                putBoolean(MethodSelectionDialogFragment.ARG_IS_PASSPORT_IMAGE, isPassportImage)
+            }
+        }
+        dialog.show(childFragmentManager, "MethodSelectionDialog")
     }
 
     private fun observeMedia(){
-        findNavController().currentBackStackEntry?.savedStateHandle?.getLiveData<String>(SINGLE_IMAGE_URI)
-            ?.observe(viewLifecycleOwner) { uri ->
-                if (uri != null) {
-                    if (isProfileImage) {
-                        profileImageUri = uri.toUri()
-                        binding.profileImage.load(uri){
-                            crossfade(true)
-                            transformations(coil.transform.CircleCropTransformation())
-                        }
-                    } else if (isPassportImage) {
-                        passportImageUri = uri.toUri()
-                        binding.passportImage.load(uri) {
-                            crossfade(true)
-                        }
+        childFragmentManager.setFragmentResultListener(
+            MethodSelectionDialogFragment.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            val uriString = bundle.getString(MethodSelectionDialogFragment.RESULT_IMAGE_URI)
+            uriString?.let { uri ->
+                if (isProfileImage) {
+                    profileImageUri = uri.toUri()
+                    binding.profileImage.load(uri) {
+                        crossfade(true)
+                        transformations(coil.transform.CircleCropTransformation())
                     }
-                    findNavController().currentBackStackEntry?.savedStateHandle?.set(SINGLE_IMAGE_URI, null) // Reset LiveData
+                } else if (isPassportImage) {
+                    passportImageUri = uri.toUri()
+                    binding.passportImage.load(uri) {
+                        crossfade(true)
+                    }
                 }
             }
+        }
     }
 }

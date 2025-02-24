@@ -15,7 +15,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
 import androidx.core.net.toUri
-import androidx.navigation.fragment.findNavController
+import androidx.core.os.bundleOf
+import androidx.fragment.app.setFragmentResult
 import com.example.photopickerandroidsample.camera.CameraFragment
 import com.example.photopickerandroidsample.camera.CameraFragment.Companion.OPEN_FRONT_CAMERA
 import com.example.photopickerandroidsample.databinding.FragmentMethodSelectionDialogBinding
@@ -72,8 +73,8 @@ class MethodSelectionDialogFragment : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        isPassportImage = arguments?.getBoolean("isPassportImage") ?: false
-        isProfileImage = arguments?.getBoolean("isProfileImage") ?: false
+        isProfileImage = arguments?.getBoolean(ARG_IS_PROFILE_IMAGE) ?: false
+        isPassportImage = arguments?.getBoolean(ARG_IS_PASSPORT_IMAGE) ?: false
 
         binding.galleryButton.safeClick({
             checkMediaPermission()
@@ -163,23 +164,27 @@ class MethodSelectionDialogFragment : BottomSheetDialogFragment() {
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == UCrop.REQUEST_CROP && data != null) {
-                val uri = UCrop.getOutput(data)
-                if (uri != null) {
-                    findNavController().let {
-                        it.previousBackStackEntry?.savedStateHandle?.set(SINGLE_IMAGE_URI, uri.toString())
-                        this.dismiss()
-                    }
-                }
+        if (resultCode == Activity.RESULT_OK && requestCode == UCrop.REQUEST_CROP && data != null) {
+            val uri = UCrop.getOutput(data)
+            if (uri != null) {
+                // Send the result back using the Fragment Result API.
+                setFragmentResult(
+                    REQUEST_KEY,
+                    bundleOf(RESULT_IMAGE_URI to uri.toString())
+                )
+                dismiss()
             }
         } else {
-            Log.d("MethodSelectionDialogFragment","Camera/image picker returned without any data")
+            Log.d("MethodSelectionDialogFragment", "Camera/image picker returned without any data")
         }
     }
 
+
     companion object {
+        const val REQUEST_KEY = "MethodSelectionDialogFragment.REQUEST_KEY"
+        const val ARG_IS_PROFILE_IMAGE = "ARG_IS_PROFILE_IMAGE"
+        const val ARG_IS_PASSPORT_IMAGE = "ARG_IS_PASSPORT_IMAGE"
+        const val RESULT_IMAGE_URI = "RESULT_IMAGE_URI"
         const val CAPTURED_IMAGE = "captured_image_uri"
-        const val SINGLE_IMAGE_URI = "single_image_uri"
     }
 }
